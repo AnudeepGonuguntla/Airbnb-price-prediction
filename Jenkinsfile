@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        def image = docker.build("${DOCKER_IMAGE}")
+                        bat "docker build -t ${DOCKER_IMAGE} ."
                         echo "Successfully built Docker image: ${DOCKER_IMAGE}"
                     } catch (Exception e) {
                         error "Failed to build Docker image: ${e.message}"
@@ -46,9 +46,9 @@ pipeline {
             steps {
                 script {
                     try {
-                        def container = docker.image("${DOCKER_IMAGE}").run('-p 8502:8501 --name test-container')
-                        sleep 20 // Increased to ensure app starts
-                        container.stop()
+                        bat "docker run -d -p 8502:8501 --name test-container ${DOCKER_IMAGE}"
+                        bat "timeout /t 20 /nobreak" // Wait 20 seconds
+                        bat "docker stop test-container"
                         echo "Docker image test passed"
                     } catch (Exception e) {
                         error "Docker image test failed: ${e.message}"
@@ -61,7 +61,7 @@ pipeline {
                 script {
                     try {
                         docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
-                            docker.image("${DOCKER_IMAGE}").push()
+                            bat "docker push ${DOCKER_IMAGE}"
                         }
                         echo "Successfully pushed Docker image to Docker Hub"
                     } catch (Exception e) {
@@ -74,7 +74,6 @@ pipeline {
     post {
         always {
             script {
-                // Use bat for Windows compatibility
                 bat 'docker rm -f test-container || exit 0'
             }
         }
