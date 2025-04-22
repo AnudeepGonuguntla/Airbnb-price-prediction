@@ -1,0 +1,1 @@
+**pycache**\*.pyc \*.pyo \*.pyd .Python env/ venv/ \*.egg-info/ \*.log .git .gitignore .vscode/ .idea/
