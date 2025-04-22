@@ -2,30 +2,30 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'anudeepgonuguntla/airbnb-streamlit:latest'
+        DOCKER_IMAGE = 'anudeepgonuguntla/airbnb-price-prediction'
+        DOCKER_CREDENTIALS_ID = 'dockerhub'
     }
 
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/AnudeepGonuguntla/Airbnb-price-prediction.git'
+                git branch: 'main', url: 'https://github.com/AnudeepGonuguntla/Airbnb-price-prediction.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("${env.DOCKER_IMAGE}")
+                    dockerImage = docker.build("${DOCKER_IMAGE}")
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    script {
-                        sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                        sh "docker push ${env.DOCKER_IMAGE}"
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', "${DOCKER_CREDENTIALS_ID}") {
+                        dockerImage.push('latest')
                     }
                 }
             }
@@ -33,8 +33,11 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Pipeline finished.'
+        success {
+            echo 'Docker image built and pushed successfully.'
+        }
+        failure {
+            echo 'Build failed.'
         }
     }
 }
