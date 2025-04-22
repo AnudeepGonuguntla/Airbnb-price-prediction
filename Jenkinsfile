@@ -17,6 +17,19 @@ pipeline {
                 }
             }
         }
+        stage('Verify Docker') {
+            steps {
+                script {
+                    try {
+                        bat 'docker --version'
+                        bat 'docker info'
+                        echo "Docker is accessible"
+                    } catch (Exception e) {
+                        error "Docker verification failed: ${e.message}"
+                    }
+                }
+            }
+        }
         stage('Build Docker Image') {
             steps {
                 script {
@@ -34,7 +47,7 @@ pipeline {
                 script {
                     try {
                         def container = docker.image("${DOCKER_IMAGE}").run('-p 8502:8501 --name test-container')
-                        sleep 10 // Wait for app to start
+                        sleep 20 // Increased to ensure app starts
                         container.stop()
                         echo "Docker image test passed"
                     } catch (Exception e) {
@@ -61,8 +74,8 @@ pipeline {
     post {
         always {
             script {
-                // Clean up any running test containers
-                sh 'docker rm -f test-container || true'
+                // Use bat for Windows compatibility
+                bat 'docker rm -f test-container || exit 0'
             }
         }
         success {
