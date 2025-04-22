@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'anudeepgonuguntla/airbnb-price-prediction'
+        DOCKER_IMAGE = 'anudeep16/airbnb-price-prediction'
         DOCKER_CREDENTIALS_ID = 'dockerhub'
     }
 
