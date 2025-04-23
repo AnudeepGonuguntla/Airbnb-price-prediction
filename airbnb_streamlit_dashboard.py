@@ -12,7 +12,7 @@ import os
 import streamlit as st
 
 # Set page config for better layout
-st.set_page_config(page_title="Airbnb Price Prediction Dashboard", layout="wide")
+st.set_page_config(page_title="Airbnb Price Prediction", layout="wide")
 
 # Load dataset
 @st.cache_data
