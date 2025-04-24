@@ -1,39 +1,57 @@
 pipeline {
     agent any
-
     environment {
-        DOCKER_IMAGE = 'anudeepgonuguntla/airbnb-streamlit:latest'
+        IMAGE_NAME = 'anudeep16/airbnb-streamlit'
+        IMAGE_TAG = "v${env.BUILD_NUMBER}"
+        CONTAINER_NAME = 'airbnb-app-container'
     }
-
     stages {
-        stage('Clone Repository') {
+        stage('Clone Repo') {
             steps {
-                git 'https://github.com/AnudeepGonuguntla/Airbnb-price-prediction.git'
+                git branch: '${BRANCH_NAME}', 
+                    url: 'https://github.com/AnudeepGonuguntla/Airbnb-price-prediction.git',
+                    credentialsId: 'github-credentials'
             }
         }
-
         stage('Build Docker Image') {
             steps {
-                script {
-                    dockerImage = docker.build("${env.DOCKER_IMAGE}")
-                }
+                echo "Building Docker image using cache..."
+                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
             }
         }
-
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    script {
-                        sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
-                        sh "docker push ${env.DOCKER_IMAGE}"
-                    }
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                    bat "docker push %IMAGE_NAME%:%IMAGE_TAG%"
                 }
             }
         }
+        stage('Cleanup Existing Container') {
+            when {
+                branch 'master'
+            }
+            steps {
+                bat """
+                for /f %%i in ('docker ps -a -q --filter "name=%CONTAINER_NAME%"') do (
+                    docker stop %%i
+                    docker rm %%i
+                )
+                """
+            }
+        }
+        stage('Run New Container') {
+            when {
+                branch 'master'
+            }
+            steps {
+                bat "docker run -d -p 8503:8501 --name %CONTAINER_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+            }
+        }
     }
-
     post {
         always {
+            bat "docker system prune -f"
             echo 'Pipeline finished.'
         }
     }
