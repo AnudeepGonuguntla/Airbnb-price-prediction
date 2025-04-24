@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    parameters {
+        string(name: 'HOST_PORT', defaultValue: '8503', description: 'Host port to map to container port 8501')
+    }
     environment {
         IMAGE_NAME = 'anudeep16/airbnb-streamlit'
         IMAGE_TAG = "v${env.BUILD_NUMBER}"
