@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Clone Repo') {
             steps {
-                git branch: '${BRANCH_NAME}', 
+                git branch: 'main', 
                     url: 'https://github.com/AnudeepGonuguntla/Airbnb-price-prediction.git',
                     credentialsId: 'github-credentials'
             }
