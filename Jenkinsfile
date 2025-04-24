@@ -9,6 +9,12 @@ pipeline {
         CONTAINER_NAME = 'airbnb-app-container'
     }
     stages {
+        stage('Clean Workspace') {
+            steps {
+                deleteDir()
+            }
+        }
+
         stage('Clone Repo') {
             steps {
                 git branch: 'main', 
@@ -16,12 +22,14 @@ pipeline {
                     credentialsId: 'github-credentials'
             }
         }
+
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image using cache..."
-                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
+                echo "Building Docker image without cache..."
+                bat "docker build --no-cache -t %IMAGE_NAME%:%IMAGE_TAG% ."
             }
         }
+
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
@@ -30,10 +38,8 @@ pipeline {
                 }
             }
         }
+
         stage('Cleanup Existing Container') {
-            when {
-                branch 'main'
-            }
             steps {
                 bat """
                 for /f %%i in ('docker ps -a -q --filter "name=%CONTAINER_NAME%"') do (
@@ -43,15 +49,21 @@ pipeline {
                 """
             }
         }
+
         stage('Run New Container') {
-            when {
-                branch 'main'
-            }
             steps {
-                bat "docker run -d -p 8503:8501 --name %CONTAINER_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+                bat "docker run -d -p %HOST_PORT%:8501 --name %CONTAINER_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+            }
+        }
+
+        stage('Check Container Logs (Optional Debug)') {
+            steps {
+                echo 'Checking container logs (this is optional, remove if not needed)'
+                bat "docker logs %CONTAINER_NAME%"
             }
         }
     }
+
     post {
         always {
             bat "docker system prune -f"
