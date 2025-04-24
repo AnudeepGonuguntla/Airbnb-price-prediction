@@ -1,20 +1,17 @@
 pipeline {
     agent any
+
     parameters {
         string(name: 'HOST_PORT', defaultValue: '8503', description: 'Host port to map to container port 8501')
     }
+
     environment {
         IMAGE_NAME = 'anudeep16/airbnb-streamlit'
         IMAGE_TAG = "v${env.BUILD_NUMBER}"
         CONTAINER_NAME = 'airbnb-app-container'
     }
-    stages {
-        stage('Clean Workspace') {
-            steps {
-                deleteDir()
-            }
-        }
 
+    stages {
         stage('Clone Repo') {
             steps {
                 git branch: 'main', 
@@ -25,8 +22,8 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image without cache..."
-                bat "docker build --no-cache -t %IMAGE_NAME%:%IMAGE_TAG% ."
+                echo "Building Docker image using cache..."
+                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
             }
         }
 
@@ -40,6 +37,9 @@ pipeline {
         }
 
         stage('Cleanup Existing Container') {
+            when {
+                branch 'main'
+            }
             steps {
                 bat """
                 for /f %%i in ('docker ps -a -q --filter "name=%CONTAINER_NAME%"') do (
@@ -51,15 +51,11 @@ pipeline {
         }
 
         stage('Run New Container') {
-            steps {
-                bat "docker run -d -p %HOST_PORT%:8501 --name %CONTAINER_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+            when {
+                branch 'main'
             }
-        }
-
-        stage('Check Container Logs (Optional Debug)') {
             steps {
-                echo 'Checking container logs (this is optional, remove if not needed)'
-                bat "docker logs %CONTAINER_NAME%"
+                bat "docker run -d -p ${params.HOST_PORT}:8501 --name %CONTAINER_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
             }
         }
     }
