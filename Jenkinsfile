@@ -32,7 +32,7 @@ pipeline {
         }
         stage('Cleanup Existing Container') {
             when {
-                branch 'master'
+                branch 'main'
             }
             steps {
                 bat """
@@ -45,7 +45,7 @@ pipeline {
         }
         stage('Run New Container') {
             when {
-                branch 'master'
+                branch 'main'
             }
             steps {
                 bat "docker run -d -p 8503:8501 --name %CONTAINER_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
