@@ -1,46 +1,29 @@
 pipeline {
     agent any
 
-    parameters {
-        string(name: 'HOST_PORT', defaultValue: '8503', description: 'Host port to map to container port 8501')
-    }
-
     environment {
         IMAGE_NAME = 'anudeep16/airbnb-streamlit'
-        IMAGE_TAG = "v${env.BUILD_NUMBER}"         // Correct way to build tag with build number
+        IMAGE_TAG = 'v1'
         CONTAINER_NAME = 'airbnb-app-container'
     }
 
     stages {
-        stage('Clone Repo') {
+        stage('Clone Repository') {
             steps {
-                git branch: 'main', 
-                    url: 'https://github.com/AnudeepGonuguntla/Airbnb-price-prediction.git',
-                    credentialsId: 'github-credentials'
+                git branch: 'main', url: 'https://github.com/AnudeepGonuguntla/Airbnb-price-prediction.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "Building Docker image using cache..."
+                echo "Building Docker image: ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                 bat "docker build -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Stop and Remove Existing Container') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-                    bat "docker push ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
-                }
-            }
-        }
-
-        stage('Cleanup Existing Container') {
-            when {
-                branch 'main'
-            }
-            steps {
+                echo "Stopping and removing existing container if it exists..."
                 bat """
                 FOR /F %%i IN ('docker ps -a -q --filter "name=${env.CONTAINER_NAME}"') DO (
                     docker stop %%i
@@ -51,19 +34,18 @@ pipeline {
         }
 
         stage('Run New Container') {
-            when {
-                branch 'main'
-            }
             steps {
-                bat "docker run -d -p ${params.HOST_PORT}:8501 --name ${env.CONTAINER_NAME} ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                echo "Running new container on port 8501..."
+                bat "docker run -d -p 8501:8501 --name ${env.CONTAINER_NAME} ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
             }
         }
     }
 
     post {
         always {
-            bat "docker system prune -f"
-            echo 'Pipeline finished.'
+            echo 'Cleaning up unused Docker resources...'
+            bat "docker system prune -f -a"
+            echo '✅ Pipeline finished for Anudeep.'
         }
     }
 }
