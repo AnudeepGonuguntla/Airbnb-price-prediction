@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'anudeep16/airbnb-streamlit'
-        IMAGE_TAG = "v${env.BUILD_NUMBER}"
+        IMAGE_TAG = "v${env.BUILD_NUMBER}"         // Correct way to build tag with build number
         CONTAINER_NAME = 'airbnb-app-container'
     }
 
@@ -23,7 +23,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo "Building Docker image using cache..."
-                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
+                bat "docker build -t ${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
             }
         }
 
@@ -31,7 +31,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
-                    bat "docker push %IMAGE_NAME%:%IMAGE_TAG%"
+                    bat "docker push ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                 }
             }
         }
@@ -42,7 +42,7 @@ pipeline {
             }
             steps {
                 bat """
-                for /f %%i in ('docker ps -a -q --filter "name=%CONTAINER_NAME%"') do (
+                FOR /F %%i IN ('docker ps -a -q --filter "name=${env.CONTAINER_NAME}"') DO (
                     docker stop %%i
                     docker rm %%i
                 )
@@ -55,7 +55,7 @@ pipeline {
                 branch 'main'
             }
             steps {
-                bat "docker run -d -p ${params.HOST_PORT}:8501 --name %CONTAINER_NAME% %IMAGE_NAME%:%IMAGE_TAG%"
+                bat "docker run -d -p ${params.HOST_PORT}:8501 --name ${env.CONTAINER_NAME} ${env.IMAGE_NAME}:${env.IMAGE_TAG}"
             }
         }
     }
