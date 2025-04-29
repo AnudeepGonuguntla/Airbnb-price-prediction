@@ -12,7 +12,7 @@ import os
 import streamlit as st
 
 # Set page config for better layout
-st.set_page_config(page_title="Airbnb Price Prediction updated", layout="wide")
+st.set_page_config(page_title="Airbnb Price Prediction", layout="wide")
 
 # Load dataset
 @st.cache_data
@@ -87,7 +87,7 @@ feature_importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': im
 feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
 
 # Streamlit app
-st.title("Airbnb Price Prediction Dashboard")
+st.title("Airbnb Price Prediction Dashboard updated")
 
 # Price prediction tool
 st.header("Predict Price")
