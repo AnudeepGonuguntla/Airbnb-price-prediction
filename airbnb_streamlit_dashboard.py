@@ -87,7 +87,7 @@ feature_importance_df = pd.DataFrame({'Feature': feature_names, 'Importance': im
 feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
 
 # Streamlit app
-st.title("Airbnb Price Prediction Dashboard jittu")
+st.title("Airbnb Price Prediction Dashboard")
 
 # Price prediction tool
 st.header("Predict Price")
